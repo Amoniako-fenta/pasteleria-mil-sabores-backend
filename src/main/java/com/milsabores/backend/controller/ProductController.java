@@ -8,37 +8,35 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/products") // La URL base será http://localhost:8080/api/products
-@CrossOrigin(origins = "*") // Permite que tu React se conecte sin errores
+@RequestMapping("/api/products")
+// 👇 ESTA ES LA LÍNEA MÁGICA QUE SOLUCIONA EL BLOQUEO 👇
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ProductController {
 
     @Autowired
     private ProductRepository productRepository;
 
-    // 1. OBTENER TODOS (GET)
+    // 1. OBTENER TODOS
     @GetMapping
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
-    // 2. CREAR UNO (POST)
+    // 2. CREAR UNO
     @PostMapping
     public Product createProduct(@RequestBody Product product) {
         return productRepository.save(product);
     }
 
-    // 3. OBTENER POR ID (GET)
+    // 3. OBTENER POR ID
     @GetMapping("/{id}")
     public Product getProductById(@PathVariable Long id) {
         return productRepository.findById(id).orElse(null);
     }
 
-    // 4. ELIMINAR (DELETE)
+    // 4. ELIMINAR
     @DeleteMapping("/{id}")
     public void deleteProduct(@PathVariable Long id) {
         productRepository.deleteById(id);
     }
-    
-    // 5. ACTUALIZAR (PUT) - Tarea para ti: ¿Te animas a implementarlo?
-    // Si no, con estos 4 ya cumples gran parte.
 }

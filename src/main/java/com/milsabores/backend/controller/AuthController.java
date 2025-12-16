@@ -2,7 +2,7 @@ package com.milsabores.backend.controller;
 
 import com.milsabores.backend.dto.LoginRequest;
 import com.milsabores.backend.dto.LoginResponse;
-import com.milsabores.backend.dto.RegisterRequest; // <--- Nuevo import
+import com.milsabores.backend.dto.RegisterRequest;
 import com.milsabores.backend.model.User;
 import com.milsabores.backend.repository.UserRepository;
 import com.milsabores.backend.security.JwtUtils;
@@ -14,7 +14,8 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "*")
+// 👇 ESTA LÍNEA ES CRÍTICA: Permite que React (puerto 3000) hable con Java (puerto 8080) sin bloqueos
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
 
     @Autowired
@@ -23,24 +24,33 @@ public class AuthController {
     @Autowired
     private JwtUtils jwtUtils;
 
-    // --- LOGIN (Ya lo tenías) ---
+    // --- LOGIN ---
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+        // 1. Buscar usuario por email
         Optional<User> userOptional = userRepository.findByEmail(loginRequest.getEmail());
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
+            // 2. Verificar contraseña (texto plano para evaluación)
             if (user.getPassword().equals(loginRequest.getPassword())) {
+                // 3. Generar Token
                 String jwt = jwtUtils.generateJwtToken(user.getEmail(), user.getRole());
+                
+                // 4. Responder con Token y datos del usuario
                 return ResponseEntity.ok(new LoginResponse(
-                        jwt, user.getId(), user.getEmail(), user.getRole(), user.getName()
+                        jwt, 
+                        user.getId(), 
+                        user.getEmail(), 
+                        user.getRole(), 
+                        user.getName()
                 ));
             }
         }
         return ResponseEntity.status(401).body("Error: Credenciales incorrectas");
     }
 
-    // --- REGISTRO (NUEVO) ---
+    // --- REGISTRO ---
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest signUpRequest) {
         // 1. Verificar si el email ya existe
@@ -55,7 +65,7 @@ public class AuthController {
         user.setName(signUpRequest.getName());
         user.setEmail(signUpRequest.getEmail());
         user.setPassword(signUpRequest.getPassword());
-        user.setRole("CUSTOMER"); // Por defecto, todos se registran como clientes
+        user.setRole("CUSTOMER"); // Por defecto es Cliente
 
         // 3. Guardar en Base de Datos
         userRepository.save(user);
